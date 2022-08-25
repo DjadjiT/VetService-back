@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const {ROLE} = require("../models/role")
-const {ValidationError} = require("../configs/customError")
+const {ValidationError, UserDoesntExistError, AuthError, UserError} = require("../configs/customError")
 
 
 exports.clientRegisterValidation = [
@@ -65,11 +65,13 @@ exports.registerClient= async(user) => {
         email: user.email.toLowerCase(),
         birthdate: user.birthdate,
         role: ROLE.client,
-        phoneNb: user.phoneNb
+        phoneNb: user.phoneNb,
+        //TODO pour le moment on laisse, quand mail de vérif on avisera
+        active: true
     })
 
-    const hash = await bcrypt.genSalt(10);
-    newUser.password = await bcrypt.hash(user.password, hash);
+    const salt = await bcrypt.genSalt(10);
+    newUser.password = await bcrypt.hash(user.password, salt);
 
     const tokenExpiresTime = 60*60*48;
     return newUser.generateAuthToken(tokenExpiresTime);
@@ -77,4 +79,30 @@ exports.registerClient= async(user) => {
 
 exports.registerVet= async(user) => {
 
+}
+
+exports.loginUser = async (email, password) => {
+    if (!password || password.toString() === "") throw new ValidationError("Password is required.")
+    if (!email || email.toString() === "") throw new ValidationError("Email is required.")
+
+    if (!valideEmail(email)) throw new AuthError("Email address is not valid.")
+
+    let user = await User.findOne({email: email});
+    if (!user) throw new UserDoesntExistError()
+
+    let passwordVerification = await bcrypt.compare(password, user.password);
+    if(!passwordVerification) throw new UserError("Invalid credentials")
+
+    if(user && !user.verified) throw new AuthError("Your account is not verify yet.")
+
+    const tokenExpiresTime = 60*60*72;
+    const token = user.generateAuthToken(tokenExpiresTime);
+    return token.then(async(token) => {
+        const result = await new Promise((resolve, reject) => {
+            resolve(token);
+        });
+        return result;
+    }).catch((e) => {
+        throw e
+    });
 }
