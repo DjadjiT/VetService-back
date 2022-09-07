@@ -18,6 +18,10 @@ app.listen(port, () => {
     console.log(`[server]: Server is running at https://localhost:${port}`);
 });
 
+app.get('/', (req, res) => {
+    res.send('Express + TypeScript Server');
+});
+
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*"),
         res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
@@ -30,7 +34,8 @@ app.use(function(req, res, next) {
 connectToMongoDB();
 
 app.use('/auth', require('./routes/authRoutes'));
-
+app.use('/user', require('./routes/userRoutes'));
+app.use('/health-record', require('./routes/healthRecordRoutes'));
 
 
 app.use(cors());

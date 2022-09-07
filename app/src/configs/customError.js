@@ -12,6 +12,14 @@ class UserDoesntExistError extends Error {
     }
 }
 
+class HRExistError extends Error {
+    constructor() {
+        super("Record does not exist.");
+        this.name = this.constructor.name;
+    }
+}
+
+
 class UserError extends Error {
     constructor(message) {
         super(message);
@@ -39,3 +47,14 @@ class ValidationError extends Error {
         this.name = this.constructor.name;
     }
 }
+
+
+module.exports = {
+    UserNotAuthorizedError,
+    UserDoesntExistError,
+    UserError,
+    AuthError,
+    AdminRequestError,
+    ValidationError,
+    HRExistError
+};

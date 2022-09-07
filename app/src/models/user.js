@@ -66,7 +66,8 @@ const userSchema = new mongoose.Schema({
         maxlength: 255
     }],
     informations: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
+        maxlength: 255,
     },
     institutionName: {
         type: String,
@@ -93,21 +94,45 @@ const userSchema = new mongoose.Schema({
         maxlength: 255,
     },
     schedule: {
-        type: mongoose.Schema.Types.ObjectId,
-    },
-    tokens: [{
-        token: {
+        startingHour: {
             type: String,
-            required: true,
+            minlength: 2,
+            maxlength: 5,
+            trim: true,
         },
-        _id: false,
-    }]
+        pauseStart: {
+            type: String,
+            minlength: 2,
+            maxlength: 5,
+            trim: true,
+        },
+        pauseFinish: {
+            type: String,
+            minlength: 2,
+            maxlength: 5,
+            trim: true,
+        },
+        finishingHour: {
+            type: String,
+            minlength: 2,
+            maxlength: 5,
+            trim: true,
+        },
+        workingDay: {
+            type: [Boolean],
+        },
+    },
+    healthRecords: [
+        {
+            type: mongoose.Types.ObjectId,
+            ref: "HealthRecord"
+        }
+    ]
 })
 
 userSchema.methods.generateAuthToken = async function(expirationTime) {
     const user = this;
-    const token = jwt.sign({_id: user._id}, process.env.JWT_KEY, {expiresIn: expirationTime })
-    user.tokens = user.tokens.concat({token})
+    const token = jwt.sign({_id: user._id, email: user.email}, process.env.JWT_KEY, {expiresIn: expirationTime })
     await user.save()
     return token
 }
