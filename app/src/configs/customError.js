@@ -19,6 +19,13 @@ class HRExistError extends Error {
     }
 }
 
+class AppointmentError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = this.constructor.name;
+    }
+}
+
 
 class UserError extends Error {
     constructor(message) {
@@ -56,5 +63,6 @@ module.exports = {
     AuthError,
     AdminRequestError,
     ValidationError,
-    HRExistError
+    HRExistError,
+    AppointmentError
 };

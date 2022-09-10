@@ -72,6 +72,23 @@ exports.registerNewUser = async(user) => {
     return newUser.generateAuthToken(tokenExpiresTime);
 }
 
+exports.registerNewAdmin = async(user) => {
+    let us = await User.findOne({ email: user.email.toLowerCase() });
+    if (us) throw new AuthError("Email is already use")
+
+    let newUser = new User({
+        email: user.email.toLowerCase(),
+        role: ROLE.admin,
+        active: true
+    })
+
+    const salt = await bcrypt.genSalt(10);
+    newUser.password = await bcrypt.hash(user.password, salt);
+
+    const tokenExpiresTime = 60*60*48;
+    return newUser.generateAuthToken(tokenExpiresTime);
+}
+
 exports.registerNewVet = async(user) => {
     let us = await User.findOne({ email: user.email.toLowerCase() });
 
@@ -87,15 +104,15 @@ exports.registerNewVet = async(user) => {
         role: ROLE.veterinary,
         phoneNb: user.phoneNb,
         //TODO pour le moment on laisse, quand mail de vérif on avisera
-        speciality: speciality,
+        speciality: speciality.toLowerCase(),
         appointmentType: user.appointmentType,
         paymentMethod: pm,
         informations: user.informations,
         institutionName: user.institutionName,
-        street: user.street,
-        postalCode: user.postalCode,
-        city: user.city,
-        country: user.country,
+        street: user.street.toLowerCase(),
+        postalCode: user.postalCode.toLowerCase(),
+        city: user.city.toLowerCase(),
+        country: user.country.toLowerCase(),
         rpps: user.rpps,
 
     })

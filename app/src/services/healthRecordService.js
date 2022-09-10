@@ -2,7 +2,8 @@ const User = require("../models/user");
 const {check} = require("express-validator");
 const HealthRecord = require("../models/healthRecord");
 const {ValidationError, UserDoesntExistError, AuthError, UserError, HRExistError} = require("../configs/customError")
-const {ANIMALTYPE, SEX} = require("../models/enum/enum")
+const {ANIMALTYPE, SEX, ROLE} = require("../models/enum/enum")
+const {validateDate, validateBirthDate} = require("../configs/validation")
 
 exports.healthRecordValidation = [
     check("type", "type is required").not().isEmpty(),
@@ -24,6 +25,21 @@ exports.updateHealthRecord = async(healthRecord, userId) => {
     return updateHR(healthRecord)
 }
 
+exports.deleteHealthRecord = async(hrId, userId) => {
+    await validateUserRightOnHR(userId, hrId)
+
+    return deleteHr(hrId)
+}
+
+exports.deleteHealthRecord = async(hrId, userId) => {
+    await validateUserRightOnHR(userId, hrId)
+
+    return deleteHr(hrId)
+}
+
+exports.getHealthRecordById = async(hrId, userId) => {
+    return validateUserRightOnHR(userId, hrId)
+}
 exports.addNewHealthRecord = async(healthRecord, userId) => {
     let user = await User.findById(userId)
     if(!user) throw new UserDoesntExistError()
@@ -45,14 +61,18 @@ async function validateUserRightOnHR(userId, hrId){
 
     if(user.healthRecords.find(e => e.equals(hrId))) throw new UserError("User cant add a vaccin to this HR")
 
+    if(user.role===ROLE.veterinary) return
+
     let hr = await HealthRecord.findById(hrId)
+
+    if(user.role===ROLE.veterinary) return hr
+
     if(!hr) throw new HRExistError()
 
     return hr
 }
 
 function newHealthRecord(healthRecord) {
-    console.log(healthRecord)
     return new HealthRecord({
         type: validateAnimalType(healthRecord.type),
         name: healthRecord.name,
@@ -77,6 +97,16 @@ function updateHR(healthRecord) {
         vaccins: newVaccins(healthRecord.vaccins, healthRecord.birthDate),
         notes: newNotes(healthRecord.notes)
     })
+}
+
+function deleteHr(hrId){
+    return HealthRecord.deleteOne({_id: hrId})
+}
+
+exports.getHRById = async(id) => {
+    let hr = await HealthRecord.findById(id)
+    if(!hr) throw new HRExistError()
+    return hr
 }
 
 function newVaccins(vaccins, birthDate){
@@ -134,17 +164,3 @@ function validateAnimalSex(sex){
     }
     throw new ValidationError("Animal sex doesnt exist.")
 }
-
-function validateBirthDate(date){
-    if(new Date(date)> new Date()) throw new ValidationError("Birthdate doesnt exist.")
-
-    return new Date(date)
-}
-
-function validateDate(date, birthdate){
-    let d = new Date(date)
-    if(d < new Date(birthdate)) throw new ValidationError("Date not possible." +date)
-
-    return d
-}
-

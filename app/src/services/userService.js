@@ -2,7 +2,7 @@ const User = require("../models/user");
 const {check} = require("express-validator");
 const bcrypt = require("bcryptjs");
 const {UserDoesntExistError, UserError, ValidationError} = require("../configs/customError")
-const {ROLE, SPECIALITY, PAYMENTMETHOD} = require("../models/enum/enum")
+const {ROLE} = require("../models/enum/enum")
 
 exports.scheduleVerification = [
     check("startingHour", "startingHour is required").not().isEmpty(),
@@ -16,6 +16,12 @@ exports.getCurrent = async (userId) =>{
     let user = await User.findOne({_id: userId});
     if (!user) throw new UserDoesntExistError()
     return user
+}
+
+exports.getUserById = async (userId) =>{
+    let user = await User.findOne({_id: userId});
+    if (!user) throw new UserDoesntExistError()
+    return userToUserInfo(user)
 }
 
 exports.updateCurrent = async (user, id) => {
@@ -56,6 +62,10 @@ exports.updateVetSchedule = async (userId, schedule) => {
             }
         });
 
+}
+
+exports.userToDto = (user) => {
+    return userToUserInfo(user)
 }
 
 function validateScheduleHour(hour){
@@ -105,7 +115,7 @@ async function newVet(user, id){
         phoneNb: user.phoneNb,
         password: password,
         //TODO pour le moment on laisse, quand mail de vérif on avisera
-        speciality: user.speciality,
+        speciality: user.speciality.toLowerCase(),
         appointmentType: user.appointmentType,
         paymentMethod: user.paymentMethod,
         informations: user.informations,
@@ -118,3 +128,27 @@ async function newVet(user, id){
         rpps: user.rpps,
     })
 }
+
+
+function userToUserInfo(user){
+    console.log(user)
+    return {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        speciality: user.speciality,
+        institutionName: user.institutionName,
+        street: user.street,
+        postalCode: user.postalCode,
+        city: user.city,
+        country: user.country,
+        phoneNb: user.phoneNb,
+        informations: user.informations,
+        schedule: user.schedule,
+        paymentMethod: user.paymentMethod,
+        appointmentType: user.appointmentType,
+        healthRecords: user.healthRecords,
+    }
+}
+

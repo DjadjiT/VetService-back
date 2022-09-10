@@ -36,6 +36,7 @@ connectToMongoDB();
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/user', require('./routes/userRoutes'));
 app.use('/health-record', require('./routes/healthRecordRoutes'));
+app.use('/appointment', require('./routes/appointmentRoutes'));
 
 
 app.use(cors());
