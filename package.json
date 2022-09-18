@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app/src/app.js",
     "server": "nodemon app/src/app.js",
-    "test": "mocha 'tests/**/*.js' --recursive"
+    "test": "mocha 'tests/**/*.js' --recursive",
+    "deploy": "gatsby-plugin-s3 deploy --yes; export AWS_PAGER=\"\"; aws cloudfront create-invalidation --distribution-id E5FDMTLPHUTLTL --paths '/*';"
   },
   "author": "Djadji",
   "license": "ISC",
