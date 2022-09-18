@@ -4,7 +4,6 @@
   "description": "Rattrapage du rattrapage",
   "main": "index.js",
   "scripts": {
-    "build": "npx tsc",
     "start": "node app/src/app.js",
     "server": "nodemon app/src/app.js"
   },
