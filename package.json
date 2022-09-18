@@ -5,18 +5,21 @@
   "main": "index.js",
   "scripts": {
     "start": "node app/src/app.js",
-    "server": "nodemon app/src/app.js"
+    "server": "nodemon app/src/app.js",
+    "test": "mocha 'tests/**/*.js' --recursive"
   },
   "author": "Djadji",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.0.1",
     "bcryptjs": "^2.4.3",
+    "chai": "^4.3.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-validator": "^6.14.2",
     "jsonwebtoken": "^8.5.1",
+    "mocha": "^10.0.0",
     "moment": "^2.29.4",
     "mongoose": "^6.5.3",
     "validator": "^13.7.0"
