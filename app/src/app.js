@@ -19,7 +19,7 @@ app.listen(port, () => {
 });
 
 app.get('/', (req, res) => {
-    res.send('Express + TypeScript Server');
+    res.send('Express Server');
 });
 
 app.use(function(req, res, next) {
