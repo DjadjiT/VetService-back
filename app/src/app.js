@@ -14,6 +14,8 @@ const port = PORT;
 // Accept request
 app.use(express.json({extended: false}));
 
+app.use(cors());
+
 app.listen(port, () => {
     console.log(`[server]: Server is running at https://localhost:${port}`);
 });
@@ -23,9 +25,9 @@ app.get('/', (req, res) => {
 });
 
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*"),
+    res.header("Access-Control-Allow-Origin", "*");
         res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Access-Control-Allow-Headers, Accept, Authorization"),
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Access-Control-Allow-Headers, Accept, Authorization");
         next()
 })
 
@@ -37,6 +39,3 @@ app.use('/auth', require('./routes/authRoutes'));
 app.use('/user', require('./routes/userRoutes'));
 app.use('/health-record', require('./routes/healthRecordRoutes'));
 app.use('/appointment', require('./routes/appointmentRoutes'));
-
-
-app.use(cors());

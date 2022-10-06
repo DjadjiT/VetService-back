@@ -8,9 +8,9 @@ const {ValidationError, UserDoesntExistError, AuthError, UserError} = require(".
 
 exports.clientRegisterValidation = [
     check("firstName", "First name is required").not().isEmpty(),
-    check("firstName", "First name is not long enough").isLength({min: 5, max: 255}),
+    check("firstName", "First name is not long enough").isLength({min: 2, max: 255}),
     check("lastName", "Last name is required").not().isEmpty(),
-    check("lastName", "Last name is not long enough").isLength({min: 5, max: 255}),
+    check("lastName", "Last name is not long enough").isLength({min: 2, max: 255}),
     check("email", "Email is required").not().isEmpty(),
     check("email", "Email is not an email type").isEmail(),
     check("birthdate", "Birthdate is required").not().isEmpty(),
