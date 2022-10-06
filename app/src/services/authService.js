@@ -25,7 +25,7 @@ exports.vetRegisterValidation = [
     check("role", "Role doesnt exist").custom((value => {
         const roles = Object.keys(ROLE)
         for(const r of roles){
-            if(r === value){
+            if(r.toLowerCase() === value.toLowerCase()){
                 return true
             }
         }
