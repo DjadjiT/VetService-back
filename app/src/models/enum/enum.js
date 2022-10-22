@@ -1,4 +1,4 @@
-const Enum = {
+const ROLE = {
     client: 'client',
     admin: 'admin',
     veterinary: 'veterinary'
@@ -43,6 +43,7 @@ const SEX = {
 }
 
 const ANIMALTYPE = {
+    AUTRE: "Autre",
     AMPHIBIENS: "Amphibiens : la grenouille rieuse, l’axolotl, le dendrobate, etc.",
     ARTHROPODES: "Arthropodes : l’araignée, le scorpion, le myriapode, etc.",
     CHAT: "Chat",
@@ -63,10 +64,30 @@ const ANIMALTYPE = {
     VISON: "Vison"
 }
 
+const MAILACTION = {
+    INSCRIPTION: "inscription",
+    VALIDATION: "validation",
+    DEACTIVATION: "deactivation",
+    APPOINTMENTFORVET: "appointmentforvet",
+    APPOINTMENTFORCLIENT: "appointmentforclient",
+    APPOINTMENTUPDATE: "appointmentupdate",
+    APPOINTMENTDELETE: "appointmentdelete",
+    APPOINTMENT: "appointment",
+    HRMODIFICATION: "hrmodification",
+}
+
+const NEWSLETTER_FREQUENCY = {
+    DAILY: "daily",
+    WEEKLY: "weekly",
+    MONTHLY: "monthly",
+}
+
 module.exports = {
-    ROLE: Enum,
+    ROLE: ROLE,
     SPECIALITY: SPECIALITY,
     PAYMENTMETHOD: PAYMENTMETHOD,
     ANIMALTYPE: ANIMALTYPE,
-    SEX: SEX
+    SEX: SEX,
+    MAILACTION: MAILACTION,
+    NEWSLETTER_FREQUENCY: NEWSLETTER_FREQUENCY
 }

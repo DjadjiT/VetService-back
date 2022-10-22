@@ -51,7 +51,8 @@ const healthRecord = new mongoose.Schema({
                 required: true,
             },
         }
-    ]
+    ],
+    deleted: {type: Boolean, default: false}
 })
 
 

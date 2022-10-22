@@ -1,7 +1,7 @@
 const {newAppointment, getAppointmentById, deleteAppointmentById, getAppointmentByUserId,
-    retrivePossibleDate, getVetDisponibility, moveAppointmentDate} = require("../services/appointmentService")
+    retrivePossibleDate, getVetDisponibility, moveAppointmentDate, adminGetAppointmentByUserId} = require("../services/appointmentService")
 const { validationResult } = require("express-validator");
-const {ValidationError, UserDoesntExistError, AuthError, AppointmentError, UserError, HRExistError} = require("../configs/customError")
+const {ValidationError, UserDoesntExistError, AuthError, AppointmentError, UserError} = require("../configs/customError")
 
 exports.postAppointment = async (req, res) => {
     const errors = validationResult(req);
@@ -31,6 +31,15 @@ exports.getAppointment = async (req, res) => {
 exports.getMyAppointment = async (req, res) => {
     try{
         let result = await getAppointmentByUserId(req.userId)
+        return res.status(200).json(result);
+    }catch (err){
+        handleErrorMessage(err, res)
+    }
+}
+
+exports.getAppointmentByUserId = async (req, res) => {
+    try{
+        let result = await adminGetAppointmentByUserId(req.params.userId)
         return res.status(200).json(result);
     }catch (err){
         handleErrorMessage(err, res)

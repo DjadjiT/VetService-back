@@ -37,10 +37,10 @@ exports.login = async (req, res) => {
         if(err instanceof UserDoesntExistError){
             return res.status(404).json(err.message);
         }
-        else if(err instanceof AuthError || err instanceof UserError){
+        else if(err instanceof AuthError){
             return res.status(412).json(err.message);
         }
-        else if(err instanceof ValidationError){
+        else if(err instanceof ValidationError|| err instanceof UserError){
             return res.status(401).json(err.message);
         }
         else{

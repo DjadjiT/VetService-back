@@ -3,9 +3,12 @@ const User = require("../models/user");
 const Appointment = require("../models/appointment");
 const HealthRecord = require("../models/healthRecord");
 const {ValidationError, UserDoesntExistError, AuthError, AppointmentError, UserError, HRExistError} = require("../configs/customError")
-const {ROLE} = require("../models/enum/enum")
+const {ROLE, MAILACTION} = require("../models/enum/enum")
 const {validateAppointmentDate} = require("../configs/validation")
-const {userToDto} = require("../services/userService")
+const {userToDto, getUserById} = require("../services/userService")
+const healthRecordService = require("./healthRecordService")
+const {sendAppointmentMailTo} = require("./smtpService")
+
 
 const moment = require("moment")
 
@@ -14,7 +17,6 @@ exports.appointmentValidation = [
     check("veterinary", "veterinary is required").not().isEmpty(),
     check("appointmentType", "appointmentType is required").not().isEmpty(),
     check("healthRecord", "healthRecord is required").not().isEmpty(),
-    //check("appointementDuration", "appointementDuration is required").not().isEmpty(),
 ];
 
 exports.appointmentUserUpdateValidation = [
@@ -22,7 +24,6 @@ exports.appointmentUserUpdateValidation = [
     check("date", "date is required").isDate(),
     check("appointmentType", "appointmentType is required").not().isEmpty(),
     check("healthRecord", "healthRecord is required").not().isEmpty(),
-    //check("appointementDuration", "appointementDuration is required").not().isEmpty(),
 ];
 
 exports.newAppointment = async(body, userId) => {
@@ -50,6 +51,8 @@ exports.newAppointment = async(body, userId) => {
         appointementDuration: 30,
     })
 
+    sendAppointmentMailTo(MAILACTION, appointment, user, vet)
+
     return appointment.save()
 }
 
@@ -58,18 +61,28 @@ exports.getAppointmentById = async(appId, userId) => {
 }
 
 exports.getAppointmentByUserId = async(userId) => {
-    let appList = await Appointment.find({
-        client: userId
-    })
+    let user = await getUserById(userId)
+
+    let appList = []
+
+    if(user.role === ROLE.client){
+        appList = await Appointment.find({
+            client: userId
+        })
+    }else if(user.role === ROLE.veterinary){
+        appList = await Appointment.find({
+            veterinary: userId
+        })
+    }
 
     let past = []
     let future = []
 
     for(const a of appList){
         if(a.date<new Date()){
-            past.push(a)
+            past.push(await appointmentDto(a, userId))
         }else{
-            future.push(a)
+            future.push(await appointmentDto(a, userId))
         }
     }
     return {
@@ -79,13 +92,48 @@ exports.getAppointmentByUserId = async(userId) => {
 
 }
 
+exports.adminGetAppointmentByUserId = async(userId) => {
+    let user = await getUserById(userId)
+
+    let appList = []
+
+    if(user.role === ROLE.client){
+        appList = await Appointment.find({
+            client: userId
+        })
+    }else if(user.role === ROLE.veterinary){
+        appList = await Appointment.find({
+            veterinary: userId
+        })
+    }
+
+    let res = []
+
+    for(const a of appList){
+        res.push(await appointmentDto(a, userId))
+    }
+    return res
+
+}
 exports.deleteAppointmentById = async (appId, userId) => {
+    let user = await User.findById(userId)
+    let vet = await User.findById(appId.veterinary)
+
     let app = await validateRightOnAppointment(appId, userId)
     if(!app.client.equals(userId)) throw new AuthError("You don't have the rights to delete this appointment.")
 
-    //TODO Cancel appointment => avec messagerie
 
-    return Appointment.deleteOne({_id: app._id})
+
+    let del = await Appointment.deleteOne({_id: app._id})
+    await sendAppointmentMailTo(MAILACTION, app, user, vet)
+
+    return del
+}
+
+
+exports.deleteAppointmentByHRId = async (hrId) => {
+
+    return Appointment.deleteMany({healthRecord: hrId})
 }
 
 exports.moveAppointmentDate = async(body, appId, userId) => {
@@ -93,9 +141,14 @@ exports.moveAppointmentDate = async(body, appId, userId) => {
 
     if(!app.client.equals(userId)) throw new AuthError("You don't have the rights to delete this appointment.")
 
+    let user = await User.findById(userId)
     let vet = await User.findById(app.veterinary)
 
     if(!(await isAppointmentAvailable(vet, new Date(body.date)))) throw new AppointmentError("Vet not available at this time.")
+
+
+
+    sendAppointmentMailTo(MAILACTION, app, user, vet)
 
     return Appointment.updateOne({
         _id: appId
@@ -114,24 +167,55 @@ exports.getVetDisponibility = async(vetId, date) => {
 }
 
 exports.retrivePossibleDate = async (filter) =>{
-    date = new Date(filter.date)
+    let date = new Date(filter.date)
 
-    let vetList = await User.find({
-        role: ROLE.veterinary,
-        active: true,
-        postalCode: filter.postalCode.toLowerCase(),
-        speciality: filter.speciality.toLowerCase(),
-        city: filter.city.toLowerCase()
-    })
+    let vetList
+    if(filter.postalCode === null || filter.postalCode.length===0){
+        vetList = await User.find({
+            role: ROLE.veterinary,
+            active: true,
+            speciality: filter.speciality.toLowerCase(),
+            city: filter.city.toLowerCase()
+        })
+    }else {
+        vetList = await User.find({
+            role: ROLE.veterinary,
+            active: true,
+            postalCode: filter.postalCode,
+            speciality: filter.speciality.toLowerCase(),
+            city: filter.city.toLowerCase()
+        })
+    }
 
     let appointmentList = []
     for(const v of vetList){
         let dispo = await getDisponibilityForVet(v, date)
-        if(dispo!==null) appointmentList.push(dispo)
+        for(let dispoElem of dispo){
+            if(dispoElem.dispoList.length>0){
+                appointmentList.push(dispo)
+            }
+        }
 
     }
     return appointmentList
 
+}
+
+async function appointmentDto(app, userId) {
+    let vet = await getUserById(app.veterinary)
+    let client = await getUserById(app.client)
+    let hr = await healthRecordService.hrFindById(app.healthRecord, userId)
+
+    return {
+        id: app._id,
+        date: app.date,
+        client: client,
+        veterinary: vet,
+        appointmentType: app.appointmentType,
+        requestDate: app.requestDate,
+        healthRecord: hr,
+        appointementDuration: app.appointementDuration,
+    }
 }
 
 async function getDisponibilityForVet(vet, date){
@@ -140,13 +224,14 @@ async function getDisponibilityForVet(vet, date){
 
     try{
         if(vet.schedule.workingDay[(date.getDay()-1)%7]){
+
             let startingHourSplit = vet.schedule.startingHour.split(":")
             let pauseStartSplit = vet.schedule.pauseStart.split(":")
 
             let startingHour = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startingHourSplit[0], startingHourSplit[1])
             let pauseStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), pauseStartSplit[0], pauseStartSplit[1])
 
-            let morningAppointment = await findAppointmentWithDateFilter(startingHour, pauseStart)
+            let morningAppointment = await findAppointmentWithDateFilter(startingHour, pauseStart, vet._id)
 
             let pauseFinishSplit = vet.schedule.pauseFinish.split(":")
             let finishingHourSplit = vet.schedule.finishingHour.split(":")
@@ -154,7 +239,8 @@ async function getDisponibilityForVet(vet, date){
             let pauseFinish = new Date(date.getFullYear(), date.getMonth(), date.getDate(), pauseFinishSplit[0], pauseFinishSplit[1])
             let finishingHour = new Date(date.getFullYear(), date.getMonth(), date.getDate(), finishingHourSplit[0], finishingHourSplit[1])
 
-            let afternoonAppointment = await findAppointmentWithDateFilter(pauseFinish, finishingHour)
+            let afternoonAppointment = await findAppointmentWithDateFilter(pauseFinish, finishingHour, vet._id)
+
 
             let morningPossibleAppointment = getPossibleAppoinmentList(startingHour, pauseStart)
             let afternoonPossibleAppointment = getPossibleAppoinmentList(pauseFinish, finishingHour)
@@ -214,9 +300,12 @@ function getDisponibilityList(possibleAppointment, appointment){
     if(appointment.length === 0) return possibleAppointment
 
     for(const strDate of possibleAppointment){
-        for(const date of appointment){
+        for(const app of appointment){
+            let date = new Date(app.date)
+
             const d = new Date(strDate)
-            if(!(d>=date.date && d<moment(date.date).add(29, 'm'))){
+
+            if(!((date<=moment(d).add(29, 'm') && date>=d) || (date>=moment(d).subtract(29, 'm') && date<=d))){
                 disponibilityList.push(d)
             }
         }
@@ -253,8 +342,9 @@ async function validateRightOnAppointment(appId, userId){
     return app
 }
 
-function findAppointmentWithDateFilter(hourA, hourB){
+function findAppointmentWithDateFilter(hourA, hourB, vetId){
     return Appointment.find({
+        veterinary: vetId,
         date: {
             $gte: hourA,
             $lt: hourB

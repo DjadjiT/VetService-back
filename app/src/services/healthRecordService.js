@@ -1,9 +1,11 @@
 const User = require("../models/user");
 const {check} = require("express-validator");
 const HealthRecord = require("../models/healthRecord");
-const {ValidationError, UserDoesntExistError, AuthError, UserError, HRExistError} = require("../configs/customError")
+const userService = require("./userService")
+const {deleteAppointmentByHRId} = require("./appointmentService")
+const {ValidationError, UserDoesntExistError, UserError, HRExistError, HRError} = require("../configs/customError")
 const {ANIMALTYPE, SEX, ROLE} = require("../models/enum/enum")
-const {validateDate, validateBirthDate} = require("../configs/validation")
+const {validateBirthDate} = require("../configs/validation")
 
 exports.healthRecordValidation = [
     check("type", "type is required").not().isEmpty(),
@@ -20,26 +22,30 @@ exports.idValidation = [
 ];
 
 exports.updateHealthRecord = async(healthRecord, userId) => {
-    await validateUserRightOnHR(userId, healthRecord._id)
+    await validateUserRightOnHR(userId, healthRecord._id, "put")
 
     return updateHR(healthRecord)
 }
 
 exports.deleteHealthRecord = async(hrId, userId) => {
-    await validateUserRightOnHR(userId, hrId)
+    await validateUserRightOnHR(userId, hrId, "delete")
 
-    return deleteHr(hrId)
-}
-
-exports.deleteHealthRecord = async(hrId, userId) => {
-    await validateUserRightOnHR(userId, hrId)
-
-    return deleteHr(hrId)
+    deleteHr(hrId)
+    let deleteApp = await deleteAppointmentByHRId(hrId)
+    console.log(deleteApp)
+    return userService.removeHealthRecord(hrId, userId)
 }
 
 exports.getHealthRecordById = async(hrId, userId) => {
-    return validateUserRightOnHR(userId, hrId)
+    let hr = await validateUserRightOnHR(userId, hrId, "get")
+    return hrToDto(hr)
 }
+
+exports.hrFindById = async(hrId) => {
+    let hr = await HealthRecord.findById(hrId)
+    return hrToDto(hr)
+}
+
 exports.addNewHealthRecord = async(healthRecord, userId) => {
     let user = await User.findById(userId)
     if(!user) throw new UserDoesntExistError()
@@ -55,19 +61,20 @@ exports.addNewHealthRecord = async(healthRecord, userId) => {
     return nHr
 }
 
-async function validateUserRightOnHR(userId, hrId){
+async function validateUserRightOnHR(userId, hrId, action){
+    let hr = await HealthRecord.findById(hrId)
+
+    if(!hr) throw new HRExistError()
+    if(hr.deleted && action!=="get") throw new HRError("This HR is deleted, you can't access it!")
+
+
     let user = await User.findById(userId)
     if(!user) throw new UserDoesntExistError()
 
-    if(user.healthRecords.find(e => e.equals(hrId))) throw new UserError("User cant add a vaccin to this HR")
-
-    if(user.role===ROLE.veterinary) return
-
-    let hr = await HealthRecord.findById(hrId)
 
     if(user.role===ROLE.veterinary) return hr
 
-    if(!hr) throw new HRExistError()
+    if(!(user.healthRecords.find(e => e.toString() === hrId))) throw new UserError("User cant access to this HR")
 
     return hr
 }
@@ -80,6 +87,8 @@ function newHealthRecord(healthRecord) {
         sex: validateAnimalSex(healthRecord.sex),
         sterilised: healthRecord.sterilised,
         birthDate: validateBirthDate(healthRecord.birthDate),
+        vaccins: healthRecord.vaccins,
+        notes: healthRecord.notes,
     })
 }
 
@@ -94,57 +103,23 @@ function updateHR(healthRecord) {
         sex: validateAnimalSex(healthRecord.sex),
         sterilised: healthRecord.sterilised,
         birthDate: validateBirthDate(healthRecord.birthDate),
-        vaccins: newVaccins(healthRecord.vaccins, healthRecord.birthDate),
-        notes: newNotes(healthRecord.notes)
+        vaccins: healthRecord.vaccins,
+        notes: healthRecord.notes,
     })
 }
 
 function deleteHr(hrId){
-    return HealthRecord.deleteOne({_id: hrId})
+    return HealthRecord.updateOne({
+        _id: hrId
+    }, {
+        deleted: true
+    })
 }
 
 exports.getHRById = async(id) => {
     let hr = await HealthRecord.findById(id)
     if(!hr) throw new HRExistError()
     return hr
-}
-
-function newVaccins(vaccins, birthDate){
-    let vaccinList = []
-    for(const v of vaccins){
-        vaccinList.push(newVaccin(v, birthDate))
-    }
-    return vaccinList
-}
-
-function newVaccin(v, birthDate){
-    if(v.dateRecall){
-        return {
-            name: v.name,
-            dateVaccin: validateDate(v.dateVaccin, birthDate),
-            dateRecall: validateDate(v.dateRecall, birthDate)
-        }
-    }else{
-        return {
-            name: v.name,
-            dateVaccin: validateDate(v.dateVaccin, birthDate)
-        }
-    }
-}
-
-function newNote(n){
-    return {
-        informations: n.informations,
-        date: validateDate(n.date, birthDate),
-    }
-}
-
-function newNotes(notes){
-    let notesList = []
-    for(const n of notes){
-        notesList.push(newNote(n))
-    }
-    return notesList
 }
 
 function validateAnimalType(type){
@@ -163,4 +138,19 @@ function validateAnimalSex(sex){
         }
     }
     throw new ValidationError("Animal sex doesnt exist.")
+}
+
+function hrToDto(hr){
+    return {
+        id: hr._id,
+        type: hr.type,
+        name: hr.name,
+        race: hr.race,
+        sex: hr.sex,
+        sterilised: hr.sterilised,
+        birthDate: hr.birthDate,
+        vaccins: hr.vaccins,
+        notes: hr.notes,
+        deleted: hr.deleted
+    }
 }

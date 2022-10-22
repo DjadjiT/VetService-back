@@ -62,8 +62,7 @@ const userSchema = new mongoose.Schema({
         maxlength: 255
     }],
     informations: {
-        type: String,
-        maxlength: 255,
+        type: String
     },
     institutionName: {
         type: String,
@@ -88,6 +87,15 @@ const userSchema = new mongoose.Schema({
     rpps: {
         type: String,
         maxlength: 255,
+    },
+    customerId: {
+        type: String,
+    },
+    subscriptionList: {
+        type: [{
+            type: String,
+        }],
+        default: []
     },
     schedule: {
         startingHour: {

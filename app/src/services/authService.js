@@ -4,6 +4,7 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const {ROLE, PAYMENTMETHOD, SPECIALITY} = require("../models/enum/enum")
 const {ValidationError, UserDoesntExistError, AuthError, UserError} = require("../configs/customError")
+const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
 
 
 exports.clientRegisterValidation = [
@@ -13,7 +14,7 @@ exports.clientRegisterValidation = [
     check("lastName", "Last name is not long enough").isLength({min: 2, max: 255}),
     check("email", "Email is required").not().isEmpty(),
     check("email", "Email is not an email type").isEmail(),
-    check("birthdate", "Birthdate is required").not().isEmpty(),
+    //check("birthdate", "Birthdate is required").not().isEmpty(),
     check("password", "Password is required").not().isEmpty(),
     check("password", "Password is not long enough").isLength({min: 5, max: 255}),
     check("phoneNb", "Phone number is required").not().isEmpty(),
@@ -50,14 +51,14 @@ exports.loginValidation = [
 
 
 exports.registerNewUser = async(user) => {
-    let us = await User.findOne({ email: user.email.toLowerCase() });
+    let us = await User.findOne({ email: user.email });
     if (us) throw new AuthError("Email is already use")
 
     let newUser = new User({
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email.toLowerCase(),
-        birthdate: user.birthdate,
+        email: user.email,
+        //birthdate: user.birthdate,
         role: ROLE.client,
         phoneNb: user.phoneNb,
         healthRecords: [],
@@ -73,12 +74,14 @@ exports.registerNewUser = async(user) => {
 }
 
 exports.registerNewAdmin = async(user) => {
-    let us = await User.findOne({ email: user.email.toLowerCase() });
+    let us = await User.findOne({ email: user.email });
     if (us) throw new AuthError("Email is already use")
 
     let newUser = new User({
-        email: user.email.toLowerCase(),
+        email: user.email,
         role: ROLE.admin,
+        firstName: user.firstName,
+        lastName: user.lastName,
         active: true
     })
 
@@ -90,7 +93,7 @@ exports.registerNewAdmin = async(user) => {
 }
 
 exports.registerNewVet = async(user) => {
-    let us = await User.findOne({ email: user.email.toLowerCase() });
+    let us = await User.findOne({ email: user.email });
 
     let speciality = validateSpeciality(user.speciality)
     let pm = validatePaymentMethod(user.paymentMethod)
@@ -99,8 +102,8 @@ exports.registerNewVet = async(user) => {
     let newVet = new User({
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email.toLowerCase(),
-        birthdate: user.birthdate,
+        email: user.email,
+        //birthdate: user.birthdate,
         role: ROLE.veterinary,
         phoneNb: user.phoneNb,
         //TODO pour le moment on laisse, quand mail de vérif on avisera
@@ -116,6 +119,20 @@ exports.registerNewVet = async(user) => {
         rpps: user.rpps,
 
     })
+
+    let customer = await stripe.customers.create({
+        email: newVet.email,
+        name: newVet.last,
+        address: {
+            city: newVet.city,
+            country: newVet.country,
+            line1: newVet.street,
+            postal_code: newVet.postalCode,
+        },
+    });
+    console.log(customer)
+    newVet.customerId = customer.id
+    console.log(customer.id)
 
     const salt = await bcrypt.genSalt(10);
     newVet.password = await bcrypt.hash(user.password, salt);
@@ -186,6 +203,20 @@ exports.authUser = async(req, res, next) => {
         next();
     } catch (err) {
         return res.status(401).json("Unauthorized");
+    }
+}
+
+exports.getUserId = async(req, res, next) => {
+    try {
+        const authorization = req.header("Authorization");
+
+        const jwtData = await getTokenInfo(authorization)
+        if (jwtData) return req.userId = jwtData._id;
+        req.userId = jwtData._id;
+
+        next();
+    } catch (err) {
+        next()
     }
 }
 

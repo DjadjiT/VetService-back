@@ -4,8 +4,8 @@
   "description": "Rattrapage du rattrapage",
   "main": "index.js",
   "scripts": {
-    "start": "node app/src/app.js",
-    "server": "nodemon app/src/app.js",
+    "start": "node app/src/app.js --proxy-config src/proxy.config.json",
+    "server": "nodemon app/src/app.js --proxy-config src/proxy.config.json",
     "test": "mocha 'tests/**/*.js' --recursive",
     "deploy": "gatsby-plugin-s3 deploy --yes; export AWS_PAGER=\"\"; aws cloudfront create-invalidation --distribution-id E5FDMTLPHUTLTL --paths '/*';"
   },
@@ -21,6 +21,8 @@
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.4",
     "mongoose": "^6.5.3",
+    "nodemailer": "^6.8.0",
+    "stripe": "^10.14.0",
     "validator": "^13.7.0"
   },
   "devDependencies": {

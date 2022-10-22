@@ -19,6 +19,13 @@ class HRExistError extends Error {
     }
 }
 
+class HRError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = this.constructor.name;
+    }
+}
+
 class AppointmentError extends Error {
     constructor(message) {
         super(message);
@@ -48,6 +55,20 @@ class AdminRequestError extends Error {
     }
 }
 
+class NewsletterError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = this.constructor.name;
+    }
+}
+class NewsletterDoesntExistError extends Error {
+    constructor() {
+        super("Newsletter doesnt exist");
+        this.name = this.constructor.name;
+    }
+}
+
+
 class ValidationError extends Error {
     constructor(message) {
         super(message);
@@ -64,5 +85,8 @@ module.exports = {
     AdminRequestError,
     ValidationError,
     HRExistError,
-    AppointmentError
+    AppointmentError,
+    NewsletterError,
+    NewsletterDoesntExistError,
+    HRError
 };
