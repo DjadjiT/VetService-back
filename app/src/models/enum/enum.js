@@ -65,21 +65,19 @@ const ANIMALTYPE = {
 }
 
 const MAILACTION = {
-    INSCRIPTION: "inscription",
+    REGISTER: "register",
+    REGISTERVET: "registervet",
+    REGISTERADMIN: "registeradmin",
     VALIDATION: "validation",
     DEACTIVATION: "deactivation",
-    APPOINTMENTFORVET: "appointmentforvet",
-    APPOINTMENTFORCLIENT: "appointmentforclient",
+    DELETE: "delete",
+    UPDATE: "update",
     APPOINTMENTUPDATE: "appointmentupdate",
     APPOINTMENTDELETE: "appointmentdelete",
     APPOINTMENT: "appointment",
+    HRCREATION: "hrcreation",
     HRMODIFICATION: "hrmodification",
-}
-
-const NEWSLETTER_FREQUENCY = {
-    DAILY: "daily",
-    WEEKLY: "weekly",
-    MONTHLY: "monthly",
+    HRDELETION: "hrdeletion"
 }
 
 module.exports = {
@@ -89,5 +87,4 @@ module.exports = {
     ANIMALTYPE: ANIMALTYPE,
     SEX: SEX,
     MAILACTION: MAILACTION,
-    NEWSLETTER_FREQUENCY: NEWSLETTER_FREQUENCY
 }

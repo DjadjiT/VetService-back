@@ -4,6 +4,8 @@ const bcrypt = require("bcryptjs");
 const {UserDoesntExistError, UserError, ValidationError} = require("../configs/customError")
 const {ROLE} = require("../models/enum/enum")
 const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
+const {sendMailTo} = require("../services/smtpService")
+const {MAILACTION} = require("../models/enum/enum")
 
 exports.scheduleVerification = [
     check("startingHour", "startingHour is required").not().isEmpty(),
@@ -51,12 +53,19 @@ exports.getNotActiveVet = async () =>{
 
 exports.updateCurrent = async (user, id) => {
     let userDb = await User.findOne({_id: id});
+
+
     if(userDb.role === ROLE.veterinary){
-        return newVet(user, id, userDb)
+        let updVet = await newVet(user, id, userDb)
+
+        sendMailTo(userDb, MAILACTION.UPDATE)
+        return updVet
     }
     else if(userDb.role === ROLE.client || userDb.role === ROLE.admin){
-        return newUser(user, id, userDb)
+        let updUser = await newUser(user, id, userDb)
 
+        sendMailTo(userDb, MAILACTION.UPDATE)
+        return  updUser
     }
     throw new UserError("Role doesn't exist.")
 }
@@ -66,6 +75,11 @@ exports.deleteCurrent = async (id) => {
 }
 
 exports.deleteUserById = async (id) => {
+    let userDb = await User.findOne({_id: id});
+    if(!userDb) throw new UserDoesntExistError()
+
+    sendMailTo(userDb, MAILACTION.DELETE)
+
     return User.deleteOne({_id: id})
 }
 
@@ -145,9 +159,10 @@ function validateScheduleHour(hour){
 async function newUser(user, id, oldUser){
     let password = oldUser.password
 
-    if((user.password !== undefined && user.password !== null) || user.password !==""){
+    if(!(user.password === undefined || user.password === null || user.password ==="")){
         const salt = await bcrypt.genSalt(10);
         password = await bcrypt.hash(user.password, salt);
+        console.log(password)
     }
 
     return User.updateOne({_id: id},
@@ -156,9 +171,7 @@ async function newUser(user, id, oldUser){
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        //birthdate: user.birthdate,
         phoneNb: user.phoneNb,
-        //TODO pour le moment on laisse, quand mail de vérif on avisera
         password: password
     })
 }

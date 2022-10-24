@@ -22,9 +22,6 @@ const userSchema = new mongoose.Schema({
         minlength: 5,
         maxlength: 255,
     },
-    birthdate: {
-        type: Date,
-    },
     password: {
         type: String,
         required: true,

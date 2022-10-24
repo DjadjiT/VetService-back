@@ -51,7 +51,7 @@ exports.newAppointment = async(body, userId) => {
         appointementDuration: 30,
     })
 
-    sendAppointmentMailTo(MAILACTION, appointment, user, vet)
+    sendAppointmentMailTo(MAILACTION.APPOINTMENT, appointment, user, vet)
 
     return appointment.save()
 }
@@ -116,16 +116,16 @@ exports.adminGetAppointmentByUserId = async(userId) => {
 
 }
 exports.deleteAppointmentById = async (appId, userId) => {
-    let user = await User.findById(userId)
-    let vet = await User.findById(appId.veterinary)
 
     let app = await validateRightOnAppointment(appId, userId)
-    if(!app.client.equals(userId)) throw new AuthError("You don't have the rights to delete this appointment.")
+    if(!(app.client.equals(userId) || app.veterinary.equals(userId))) throw new AuthError("You don't have the rights to delete this appointment.")
 
 
+    let user = await User.findById(app.client)
+    let vet = await User.findById(app.veterinary)
 
     let del = await Appointment.deleteOne({_id: app._id})
-    await sendAppointmentMailTo(MAILACTION, app, user, vet)
+    await sendAppointmentMailTo(MAILACTION.APPOINTMENTDELETE, app, user, vet)
 
     return del
 }
@@ -139,16 +139,16 @@ exports.deleteAppointmentByHRId = async (hrId) => {
 exports.moveAppointmentDate = async(body, appId, userId) => {
     let app = await validateRightOnAppointment(appId, userId)
 
-    if(!app.client.equals(userId)) throw new AuthError("You don't have the rights to delete this appointment.")
+    if(!app.client.equals(userId)) throw new AuthError("You don't have the rights to move this appointment.")
 
-    let user = await User.findById(userId)
+    let user = await User.findById(app.client)
     let vet = await User.findById(app.veterinary)
 
     if(!(await isAppointmentAvailable(vet, new Date(body.date)))) throw new AppointmentError("Vet not available at this time.")
 
 
 
-    sendAppointmentMailTo(MAILACTION, app, user, vet)
+    sendAppointmentMailTo(MAILACTION.APPOINTMENTUPDATE, app, user, vet)
 
     return Appointment.updateOne({
         _id: appId
@@ -170,6 +170,7 @@ exports.retrivePossibleDate = async (filter) =>{
     let date = new Date(filter.date)
 
     let vetList
+
     if(filter.postalCode === null || filter.postalCode.length===0){
         vetList = await User.find({
             role: ROLE.veterinary,
@@ -189,11 +190,10 @@ exports.retrivePossibleDate = async (filter) =>{
 
     let appointmentList = []
     for(const v of vetList){
-        let dispo = await getDisponibilityForVet(v, date)
-        for(let dispoElem of dispo){
-            if(dispoElem.dispoList.length>0){
-                appointmentList.push(dispo)
-            }
+        let dispo = await getDisponibilityForVet(v, new Date(date))
+
+        if(dispo.dispoList.length>0){
+            appointmentList.push(dispo)
         }
 
     }
@@ -223,7 +223,7 @@ async function getDisponibilityForVet(vet, date){
     let dispoList = []
 
     try{
-        if(vet.schedule.workingDay[(date.getDay()-1)%7]){
+        if(vet.schedule.workingDay[(date.getDay()-2)%7]){
 
             let startingHourSplit = vet.schedule.startingHour.split(":")
             let pauseStartSplit = vet.schedule.pauseStart.split(":")
@@ -245,8 +245,18 @@ async function getDisponibilityForVet(vet, date){
             let morningPossibleAppointment = getPossibleAppoinmentList(startingHour, pauseStart)
             let afternoonPossibleAppointment = getPossibleAppoinmentList(pauseFinish, finishingHour)
 
-            dispoList = getDisponibilityList(morningPossibleAppointment, morningAppointment).concat(
-                getDisponibilityList(afternoonPossibleAppointment, afternoonAppointment))
+            let morningAppDateList = []
+            let afterNoonAppDateList = []
+
+            for(let morning of morningAppointment){
+                morningAppDateList.push(morning.date)
+            }
+            for(let afternoon of afternoonAppointment){
+                afterNoonAppDateList.push(afternoon.date)
+            }
+
+            dispoList = getDisponibilityList(morningPossibleAppointment, morningAppDateList).concat(
+                getDisponibilityList(afternoonPossibleAppointment, afterNoonAppDateList))
         }
     }catch (err){
         return {
@@ -263,7 +273,8 @@ async function getDisponibilityForVet(vet, date){
 
 async function isAppointmentAvailable(vet, date){
     if(date<new Date()) return false
-    if(!vet.schedule.workingDay[(date.getDay()-1)%7]) return false
+
+    if(!vet.schedule.workingDay[(date.getDay()-2)%7]) return false
 
     if(!isBetweenWorkingHour(vet, date)) return false
 
@@ -291,23 +302,31 @@ function isBetweenWorkingHour(vet, date){
     let pauseFinish = new Date(date.getFullYear(), date.getMonth(), date.getDate(), pauseFinishSplit[0], pauseFinishSplit[1])
     let finishingHour = new Date(date.getFullYear(), date.getMonth(), date.getDate(), finishingHourSplit[0], finishingHourSplit[1])
 
-    return (moment(date).isAfter(startingHour) && moment(date).isBefore(pauseStart)) ||
-        (moment(date).isAfter(pauseFinish) && moment(date).isBefore(finishingHour))
+    return (moment(pauseStart).isAfter(date) && moment(startingHour).isBefore(date)) ||
+        (moment(finishingHour).isAfter(date) && moment(pauseFinish).isBefore(date))
 }
 
-function getDisponibilityList(possibleAppointment, appointment){
+function getDisponibilityList(possibleAppointment, appointments){
     let disponibilityList = []
-    if(appointment.length === 0) return possibleAppointment
+    if(appointments.length === 0) return possibleAppointment
 
     for(const strDate of possibleAppointment){
-        for(const app of appointment){
-            let date = new Date(app.date)
 
-            const d = new Date(strDate)
+        const d = new Date(strDate)
 
-            if(!((date<=moment(d).add(29, 'm') && date>=d) || (date>=moment(d).subtract(29, 'm') && date<=d))){
-                disponibilityList.push(d)
+
+        let exist = false
+
+        for(let date of appointments){
+
+            if((moment(d).add(29, 'm').isAfter(date) && moment(d).isBefore(date)) ||
+                moment(d).subtract(29, 'm').isBefore(date) && moment(d).isAfter(date) || moment(d).isSame(date)){
+                exist = true
             }
+        }
+
+        if(!(exist)){
+            disponibilityList.push(d)
         }
     }
     return disponibilityList

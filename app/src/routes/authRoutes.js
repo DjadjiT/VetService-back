@@ -4,7 +4,7 @@ const router = require("express").Router();
 
 
 router.post("/register/client", clientRegisterValidation, registerClient);
-router.post("/register/admin", loginValidation, postAdmin);
+router.post("/register/admin", authUser , authAdmin, loginValidation, postAdmin);
 router.post("/login", loginValidation, login);
 router.post("/register/vet", clientRegisterValidation, vetRegisterValidation, registerVet);
 router.put("/verify-vet/:id", authUser , authAdmin, verifyVet);

@@ -3,7 +3,6 @@ const express = require('express');
 const connectToMongoDB = require("./configs/dbConnect");
 const {PORT} = require("./configs/config");
 const dotenv = require('dotenv');
-const smtpService = require('./services/smtpService');
 
 dotenv.config();
 
@@ -17,7 +16,7 @@ app.use(express.json({extended: false}));
 app.use(cors());
 
 app.listen(port, () => {
-    console.log(`[server]: Server is running at https://localhost:${port}`);
+    console.log(`[server]: Server is running !`);
 });
 
 app.get('/', (req, res) => {
@@ -39,3 +38,4 @@ app.use('/user', require('./routes/userRoutes'));
 app.use('/health-record', require('./routes/healthRecordRoutes'));
 app.use('/appointment', require('./routes/appointmentRoutes'));
 app.use('/stripe', require('./routes/stripeRoutes'));
+app.use('/newsletter', require('./routes/newsletterRoutes'));

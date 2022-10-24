@@ -1,11 +1,15 @@
 const User = require("../models/user");
 const {check} = require("express-validator");
 const HealthRecord = require("../models/healthRecord");
+const Appointment = require("../models/appointment");
 const userService = require("./userService")
 const {deleteAppointmentByHRId} = require("./appointmentService")
 const {ValidationError, UserDoesntExistError, UserError, HRExistError, HRError} = require("../configs/customError")
 const {ANIMALTYPE, SEX, ROLE} = require("../models/enum/enum")
 const {validateBirthDate} = require("../configs/validation")
+const {sendHRMailTo} = require("../services/smtpService")
+const {MAILACTION} = require("../models/enum/enum")
+
 
 exports.healthRecordValidation = [
     check("type", "type is required").not().isEmpty(),
@@ -22,17 +26,20 @@ exports.idValidation = [
 ];
 
 exports.updateHealthRecord = async(healthRecord, userId) => {
-    await validateUserRightOnHR(userId, healthRecord._id, "put")
+    let hr = await validateUserRightOnHR(userId, healthRecord._id, "put")
 
     return updateHR(healthRecord)
 }
 
 exports.deleteHealthRecord = async(hrId, userId) => {
-    await validateUserRightOnHR(userId, hrId, "delete")
+    let hr = await validateUserRightOnHR(userId, hrId, "delete")
 
     deleteHr(hrId)
-    let deleteApp = await deleteAppointmentByHRId(hrId)
-    console.log(deleteApp)
+    await deleteAppointmentByHRId(hrId)
+
+    let user = await User.findById(userId)
+    sendHRMailTo(user, MAILACTION.HRDELETION, hr)
+
     return userService.removeHealthRecord(hrId, userId)
 }
 
@@ -55,6 +62,8 @@ exports.addNewHealthRecord = async(healthRecord, userId) => {
     nHr = await nHr.save()
     user.healthRecords.push(nHr.id)
 
+
+    sendHRMailTo(user, MAILACTION.HRCREATION, nHr)
 
     await user.save()
 

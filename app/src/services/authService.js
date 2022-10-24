@@ -5,7 +5,8 @@ const jwt = require("jsonwebtoken");
 const {ROLE, PAYMENTMETHOD, SPECIALITY} = require("../models/enum/enum")
 const {ValidationError, UserDoesntExistError, AuthError, UserError} = require("../configs/customError")
 const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
-
+const {sendMailTo} = require("../services/smtpService")
+const {MAILACTION} = require("../models/enum/enum")
 
 exports.clientRegisterValidation = [
     check("firstName", "First name is required").not().isEmpty(),
@@ -14,7 +15,6 @@ exports.clientRegisterValidation = [
     check("lastName", "Last name is not long enough").isLength({min: 2, max: 255}),
     check("email", "Email is required").not().isEmpty(),
     check("email", "Email is not an email type").isEmail(),
-    //check("birthdate", "Birthdate is required").not().isEmpty(),
     check("password", "Password is required").not().isEmpty(),
     check("password", "Password is not long enough").isLength({min: 5, max: 255}),
     check("phoneNb", "Phone number is required").not().isEmpty(),
@@ -55,22 +55,26 @@ exports.registerNewUser = async(user) => {
     if (us) throw new AuthError("Email is already use")
 
     let newUser = new User({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        //birthdate: user.birthdate,
+        firstName: user.firstName.trim(),
+        lastName: user.lastName.trim(),
+        email: user.email.trim(),
         role: ROLE.client,
         phoneNb: user.phoneNb,
         healthRecords: [],
-        //TODO pour le moment on laisse, quand mail de vérif on avisera
         active: true
     })
 
     const salt = await bcrypt.genSalt(10);
     newUser.password = await bcrypt.hash(user.password, salt);
 
+
     const tokenExpiresTime = 60*60*48;
-    return newUser.generateAuthToken(tokenExpiresTime);
+    let usPwd =  newUser.generateAuthToken(tokenExpiresTime);
+
+
+    sendMailTo(user, MAILACTION.REGISTER)
+
+    return usPwd
 }
 
 exports.registerNewAdmin = async(user) => {
@@ -78,15 +82,17 @@ exports.registerNewAdmin = async(user) => {
     if (us) throw new AuthError("Email is already use")
 
     let newUser = new User({
-        email: user.email,
+        email: user.email.trim(),
         role: ROLE.admin,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.firstName.trim(),
+        lastName: user.lastName.trim(),
         active: true
     })
 
     const salt = await bcrypt.genSalt(10);
     newUser.password = await bcrypt.hash(user.password, salt);
+
+    sendMailTo(user, MAILACTION.REGISTERADMIN)
 
     const tokenExpiresTime = 60*60*48;
     return newUser.generateAuthToken(tokenExpiresTime);
@@ -100,13 +106,11 @@ exports.registerNewVet = async(user) => {
 
     if (us) throw new AuthError("Email is already use")
     let newVet = new User({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        //birthdate: user.birthdate,
+        firstName: user.firstName.trim(),
+        lastName: user.lastName.trim(),
+        email: user.email.trim(),
         role: ROLE.veterinary,
         phoneNb: user.phoneNb,
-        //TODO pour le moment on laisse, quand mail de vérif on avisera
         speciality: speciality.toLowerCase(),
         appointmentType: user.appointmentType,
         paymentMethod: pm,
@@ -117,12 +121,18 @@ exports.registerNewVet = async(user) => {
         city: user.city.toLowerCase(),
         country: user.country.toLowerCase(),
         rpps: user.rpps,
-
+        schedule: {
+            startingHour: "09:00",
+            pauseStart: "12:00",
+            pauseFinish: "13:00",
+            finishingHour: "19:00",
+        },
+        workingDay: [true, true, true, true, true, true, false]
     })
 
     let customer = await stripe.customers.create({
-        email: newVet.email,
-        name: newVet.last,
+        email: newVet.email.trim(),
+        name: newVet.lastName,
         address: {
             city: newVet.city,
             country: newVet.country,
@@ -130,21 +140,26 @@ exports.registerNewVet = async(user) => {
             postal_code: newVet.postalCode,
         },
     });
-    console.log(customer)
+
     newVet.customerId = customer.id
-    console.log(customer.id)
 
     const salt = await bcrypt.genSalt(10);
     newVet.password = await bcrypt.hash(user.password, salt);
 
     const tokenExpiresTime = 60*60*48;
-    return newVet.generateAuthToken(tokenExpiresTime);
+    let nVet =  newVet.generateAuthToken(tokenExpiresTime);
+
+    sendMailTo(user, MAILACTION.REGISTERVET)
+
+    return nVet
 }
 
 exports.verifyUser = async(userId) => {
     let user = await User.findOne({ _id: userId });
     if(!user) throw new UserDoesntExistError()
 
+
+    sendMailTo(user, MAILACTION.VALIDATION)
 
     return User.updateOne({_id: userId},
         {
@@ -157,6 +172,7 @@ exports.deverifyUser = async(userId) => {
     let user = await User.findOne({ _id: userId });
     if(!user) throw new UserDoesntExistError()
 
+    sendMailTo(user, MAILACTION.DEACTIVATION)
 
     return User.updateOne({_id: userId},
         {
