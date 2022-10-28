@@ -148,7 +148,7 @@ exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
             msg = "Vous avez un rendez-vous le "+strDate+" avec le Dr."+vet.lastName+" "+vet.firstName+"." +
                 "\nVous trouverez  votre practicien, à : "+vet.institutionName+", situé au : "+vet.street+" "+vet.postalCode+", "+vet.city+"."
 
-            mailOptions = getMailOptions(receiver, object, msg)
+            mailOptions = getMailOptions(client.email, object, msg)
 
             await transporter.sendMail(mailOptions, function (error, info) {
                 if (error) {
@@ -158,14 +158,24 @@ exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
                 }
             });
 
+            msg = "Vous avez un rendez-vous le "+strDate+" avec "+client.lastName+" "+client.firstName+"."
+
+            mailOptions = getMailOptions(vet.email, object, msg)
+
+            await transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
+                    console.log(error);
+                } else {
+                    console.log('Email sent: ' + info.response);
+                }
+            });
             break;
         case MAILACTION.APPOINTMENTUPDATE:
             object = "Votre rendez vous a été déplacé au : "+strDate
             msg = "Votre rendez vous avec le Dr."+vet.lastName+" "+vet.firstName+" a été déplacé au : "+strDate+
                 "\nVous trouverez  votre practicien, à : "+vet.institutionName+", situé au : "+vet.street+" "+vet.postalCode+","+vet.city+"."
-            receiver = [client.email, vet.email]
 
-            mailOptions = getMailOptions(receiver, object, msg)
+            mailOptions = getMailOptions(client.email, object, msg)
 
             await transporter.sendMail(mailOptions, function (error, info) {
                 if (error) {
@@ -174,6 +184,7 @@ exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
                     console.log('Email sent: ' + info.response);
                 }
             });
+            msg = "Votre rendez vous avec "+client.lastName+" "+client.firstName+" a été déplacé au : "+strDate+"."
 
             mailOptions = getMailOptions(vet.email, object, msg)
 

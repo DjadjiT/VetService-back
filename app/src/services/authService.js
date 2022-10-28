@@ -127,7 +127,7 @@ exports.registerNewVet = async(user) => {
             pauseFinish: "13:00",
             finishingHour: "19:00",
         },
-        workingDay: [true, true, true, true, true, true, false]
+        workingDay: [false, false, false, false, false, false, false]
     })
 
     let customer = await stripe.customers.create({

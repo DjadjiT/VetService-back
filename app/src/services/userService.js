@@ -131,11 +131,8 @@ exports.createSession = async (userId) =>{
                 quantity: 1,
             },
         ],
-        // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
-        // the actual Session ID is returned in the query parameter when your customer
-        // is redirected to the success page.
-        success_url: process.env.FRONT_URI+'/profile',
-        cancel_url: process.env.FRONT_URI+'/fail',
+        success_url: process.env.WEBSECURE+process.env.FRONT_URI+'/sucess',
+        cancel_url: process.env.WEBSECURE+process.env.FRONT_URI+'/fail',
         customer: user.customerId,
         subscription_data:{
             metadata : {

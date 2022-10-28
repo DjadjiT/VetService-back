@@ -1,5 +1,5 @@
 const {UserDoesntExistError, UserError} = require("../configs/customError")
-const {getSubscriptionsByUser, getProductList, buyProduct} = require("../services/stripeService")
+const {getSubscriptionsByUser, getProductList, buyProductList} = require("../services/stripeService")
 
 exports.getMySuscription = async (req, res) =>{
     try{
@@ -48,9 +48,9 @@ exports.getProductList = async (req, res) =>{
     }
 }
 
-exports.buyProduct = async (req, res) =>{
+exports.buyProducts = async (req, res) =>{
     try{
-        let session = await buyProduct(req.query.priceId, req.query.productId)
+        let session = await buyProductList(req.body)
         return  res.status(200).json({
             sessionId: session.id
         })

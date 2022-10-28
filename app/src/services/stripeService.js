@@ -45,7 +45,7 @@ exports.getProductList = async () =>{
             prod.default_price
         );
 
-        let unitAmount = price.unit_amount_decimal.slice(0, 2) + "," + price.unit_amount_decimal.slice(2);
+        let unitAmount = price.unit_amount_decimal.slice(0, 2) + "." + price.unit_amount_decimal.slice(2);
 
         prodList.push({
             id: prod.id,
@@ -62,7 +62,9 @@ exports.getProductList = async () =>{
     return prodList
 }
 
-exports.buyProduct = async (priceId, productId) => {
+exports.buyProductList = async (productIdList) => {
+    let items = getAllLineItems(productIdList)
+
     return stripe.checkout.sessions.create({
         mode: 'payment',
         allow_promotion_codes: true,
@@ -112,17 +114,28 @@ exports.buyProduct = async (priceId, productId) => {
             },
         ],
         payment_method_types: ['card'],
-        line_items: [
-            {
-                price_data: {
-                    currency: 'eur',
-                    product: productId,
-                    unit_amount: 1000 // 10 US$
-                },
-                quantity: 1
-            },
-        ],
-        success_url: 'http://localhost:4200/profile',
-        cancel_url: 'https://google.fr',
+        line_items: items,
+        success_url: process.env.WEBSECURE+process.env.FRONT_URI,
+        cancel_url: process.env.WEBSECURE+process.env.FRONT_URI+'/#/fail',
     });
+}
+
+function getAllLineItems(prodList){
+    let items = []
+
+    for(const prod of prodList){
+        let pd = {
+            price_data: {
+                currency: 'eur',
+                product: prod.id,
+                unit_amount: prod.price.unit_amount.replace(".", "")
+            },
+            quantity: 1,
+            adjustable_quantity: {
+                enabled: true
+            }
+        }
+        items.push(pd)
+    }
+    return items
 }
