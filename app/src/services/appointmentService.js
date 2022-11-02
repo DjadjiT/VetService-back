@@ -230,6 +230,7 @@ async function getDisponibilityForVet(vet, date){
     let dispoList = []
     console.log(date)
     let offset = date.getTimezoneOffset()*-1*Number(process.env.OFFSET)
+    console.log("Env offset "+Number(process.env.OFFSET))
     console.log("Adding an offset of : "+offset)
     date = new Date(date.getTime()+offset*60*1000)
     console.log(date)
