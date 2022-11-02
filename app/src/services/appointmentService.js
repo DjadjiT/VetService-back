@@ -228,12 +228,9 @@ exports.appToDto = async (app, userId) => {
 async function getDisponibilityForVet(vet, date){
     let userDto = userToDto(vet)
     let dispoList = []
-    console.log(date)
-    let offset = date.getTimezoneOffset()*-1*Number(process.env.OFFSET)
-    console.log("Env offset "+Number(process.env.OFFSET))
-    console.log("Adding an offset of : "+offset)
+
+    let offset = 60*-1*Number(process.env.OFFSET)
     date = new Date(date.getTime()+offset*60*1000)
-    console.log(date)
 
     try{
         if(vet.schedule.workingDay[(date.getDay()-1)%7]){

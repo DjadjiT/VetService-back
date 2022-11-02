@@ -159,7 +159,6 @@ async function newUser(user, id, oldUser){
     if(!(user.password === undefined || user.password === null || user.password ==="")){
         const salt = await bcrypt.genSalt(10);
         password = await bcrypt.hash(user.password, salt);
-        console.log(password)
     }
 
     return User.updateOne({_id: id},
@@ -175,7 +174,6 @@ async function newUser(user, id, oldUser){
 
 async function newVet(user, id, oldUser){
     let password = oldUser.password
-    console.log(user)
 
     if((user.password !== undefined && user.password !== null) || user.password !==""){
         const salt = await bcrypt.genSalt(10);

@@ -6,7 +6,6 @@ const {getSubscriptionsByUser, getProductList, buyProductList, webhookTrigger,
 exports.getMySuscription = async (req, res) =>{
     try{
         let result = await getSubscriptionsByUser(req.userId)
-        console.log(result)
         return res.status(200).json(result)
     }catch (err){
         console.error(err.message);

@@ -182,7 +182,6 @@ exports.updateOrderStatus = async (status, orderId) => {
     return Order.findByIdAndUpdate(orderId, {
         status: status
     }).then((data)=> {
-        console.log(data)
         sendOrderMail(data, status)
     })
 }
