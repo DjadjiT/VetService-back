@@ -229,6 +229,8 @@ async function getDisponibilityForVet(vet, date){
     let userDto = userToDto(vet)
     let dispoList = []
 
+    console.log(date)
+
     try{
         if(vet.schedule.workingDay[(date.getDay()-1)%7]){
 
