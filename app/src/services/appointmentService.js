@@ -171,6 +171,7 @@ exports.retrivePossibleDate = async (filter) =>{
 
     let vetList
 
+
     if(filter.postalCode === null || filter.postalCode.length===0){
         vetList = await User.find({
             role: ROLE.veterinary,
@@ -179,6 +180,7 @@ exports.retrivePossibleDate = async (filter) =>{
             city: filter.city.toLowerCase()
         })
     }else {
+
         vetList = await User.find({
             role: ROLE.veterinary,
             active: true,
@@ -187,6 +189,7 @@ exports.retrivePossibleDate = async (filter) =>{
             city: filter.city.toLowerCase()
         })
     }
+
 
     let appointmentList = []
     for(const v of vetList){
@@ -227,7 +230,7 @@ async function getDisponibilityForVet(vet, date){
     let dispoList = []
 
     try{
-        if(vet.schedule.workingDay[(date.getDay()-2)%7]){
+        if(vet.schedule.workingDay[(date.getDay()-1)%7]){
 
             let startingHourSplit = vet.schedule.startingHour.split(":")
             let pauseStartSplit = vet.schedule.pauseStart.split(":")
