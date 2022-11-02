@@ -35,7 +35,6 @@ function getUserMailList(userlist) {
     return userlist.map(a => a.email);
 }
 
-
 exports.sendNewsletter = async (object, msg, userList) =>{
     let transporter = getTransporter()
     let mailOptions = getMailOptionsForUserList(object, msg, userList)
@@ -57,11 +56,12 @@ exports.sendMailTo = async (user, action) =>{
     switch (action){
         case MAILACTION.REGISTER:
             object = "Bienvenue à VetServices."
-            msg = "Bonjour & bienvenue sur vetservice ici vous pouvez faire plein de truc. Comme acheter des produits et prendre des rendez-vous"
+            msg = "Bonjour & bienvenue sur vetservice ici vous pouvez faire plein de truc.\n Comme acheter des produits et prendre des rendez-vous"
             break;
         case MAILACTION.REGISTERVET:
             object = "Bienvenue à VetServices."
-            msg = "Bonjour & bienvenue sur vetservice ici vous pouvez faire plein de truc. Comme acheter des produits et faire des rendez-vous. Attendez la validation de votre compte de la part d'un admin."
+            msg = "Bonjour & bienvenue sur vetservice ici vous pouvez faire plein de truc.\n Comme acheter des produits et faire des rendez-vous.\n\n" +
+                "Pour le moment votre compte n'est pas actif.\nNous vous tiendrons informer de la validation de votre compte de la part d'un admin."
             break;
         case MAILACTION.REGISTERADMIN:
             object = "Bienvenue à VetServices"
