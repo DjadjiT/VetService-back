@@ -9,7 +9,6 @@ const {userToDto, getUserById} = require("../services/userService")
 const healthRecordService = require("./healthRecordService")
 const {sendAppointmentMailTo} = require("./smtpService")
 
-
 const moment = require("moment")
 
 exports.appointmentValidation = [
@@ -283,7 +282,7 @@ async function getDisponibilityForVet(vet, date){
 async function isAppointmentAvailable(vet, date){
     if(date<new Date()) return false
 
-    if(!vet.schedule.workingDay[(date.getDay()-2)%7]) return false
+    if(!vet.schedule.workingDay[(date.getDay()-1)%7]) return false
 
     if(!isBetweenWorkingHour(vet, date)) return false
 
@@ -294,6 +293,7 @@ async function isAppointmentAvailable(vet, date){
             $lt: moment(date).add(29, 'm')
         }
     })
+
 
     return appointment.length===0
 }
