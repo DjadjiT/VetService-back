@@ -1,4 +1,5 @@
-const {registerNewUser, loginUser, registerNewVet, verifyUser, deverifyUser, registerNewAdmin} = require("../services/authService")
+const {registerNewUser, loginUser, registerNewVet, verifyUser, deverifyUser, registerNewAdmin,
+    refuseVet} = require("../services/authService")
 const { validationResult } = require("express-validator");
 const {ValidationError, UserDoesntExistError, AuthError, UserError} = require("../configs/customError")
 
@@ -85,13 +86,6 @@ exports.postAdmin = async (req, res) => {
 }
 
 exports.verifyVet = async (req, res) =>{
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(422).json({
-            message: "Validation errors",
-            errors
-        });
-    }
     try{
         let result = await verifyUser(req.params.id)
         return res.status(200).json({result});
@@ -103,18 +97,22 @@ exports.verifyVet = async (req, res) =>{
 
 
 exports.deactivateUser = async (req, res) =>{
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(422).json({
-            message: "Validation errors",
-            errors
-        });
-    }
     try{
         let result = await deverifyUser(req.params.id)
-        return res.status(201).json({result});
+        return res.status(200).json({result});
     }catch (err){
         console.error(err.message)
         return res.status(400).json(err.message);
     }
 }
+
+exports.refuseVet = async (req, res) =>{
+    try{
+        let result = await refuseVet(req.params.id)
+        return res.status(200).json({result});
+    }catch (err){
+        console.error(err.message)
+        return res.status(400).json(err.message);
+    }
+}
+

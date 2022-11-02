@@ -39,3 +39,4 @@ app.use('/health-record', require('./routes/healthRecordRoutes'));
 app.use('/appointment', require('./routes/appointmentRoutes'));
 app.use('/stripe', require('./routes/stripeRoutes'));
 app.use('/newsletter', require('./routes/newsletterRoutes'));
+app.use('/stats', require('./routes/statsRoutes'));

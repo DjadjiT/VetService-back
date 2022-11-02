@@ -8,6 +8,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
 const {sendMailTo} = require("../services/smtpService")
 const {MAILACTION} = require("../models/enum/enum")
 
+
 exports.clientRegisterValidation = [
     check("firstName", "First name is required").not().isEmpty(),
     check("firstName", "First name is not long enough").isLength({min: 2, max: 255}),
@@ -48,7 +49,6 @@ exports.loginValidation = [
     check("email", "Email is required").not().isEmpty(),
     check("password", "Password is required").not().isEmpty(),
 ];
-
 
 exports.registerNewUser = async(user) => {
     let us = await User.findOne({ email: user.email });
@@ -180,6 +180,25 @@ exports.deverifyUser = async(userId) => {
         })
 }
 
+exports.refuseVet = async(userId) => {
+    let user = await User.findOne({ _id: userId });
+    if(!user) throw new UserDoesntExistError()
+
+    sendMailTo(user, MAILACTION.REFUSE)
+
+    setTimeout(()=> {
+        User.deleteOne({ _id: userId }).then(()=>{
+            console.log("L'utilisateur a bien été supprimé.")
+        });
+
+    }, 1000*60*60*24*3)
+
+    return User.updateOne({_id: userId},
+        {
+            active: false,
+        })
+}
+
 exports.loginUser = async (email, password) => {
     if (!password || password.toString() === "") throw new ValidationError("Password is required.")
     if (!email || email.toString() === "") throw new ValidationError("Email is required.")
@@ -189,8 +208,6 @@ exports.loginUser = async (email, password) => {
 
     let passwordVerification = await bcrypt.compare(password, user.password);
     if(!passwordVerification) throw new UserError("Invalid credentials")
-
-    if(user && !user.active) throw new AuthError("Your account is not verify yet.")
 
     const tokenExpiresTime = 60*60*72;
     const token = user.generateAuthToken(tokenExpiresTime);

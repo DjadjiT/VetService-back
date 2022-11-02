@@ -218,6 +218,10 @@ async function appointmentDto(app, userId) {
     }
 }
 
+exports.appToDto = async (app, userId) => {
+    return appointmentDto(app, userId)
+}
+
 async function getDisponibilityForVet(vet, date){
     let userDto = userToDto(vet)
     let dispoList = []

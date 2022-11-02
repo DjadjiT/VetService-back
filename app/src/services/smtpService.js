@@ -79,6 +79,12 @@ exports.sendMailTo = async (user, action) =>{
             object = "Votre compte a été déactivé."
             msg = "Voilà compte désactivé"
             break;
+        case MAILACTION.REFUSE:
+            object = "Votre demande de compte pro n'as pas été accepté."
+            msg = "Après vérification des informations présentes, nous avons décider de ne pas accorder suite à votre demande de création de compte professionel, sur notre plateforme vetService. " +
+                "\nDans 3 jours, votre profil sera supprimé, vous pourrez alors recréer un profil pour refaire votre demande." +
+                "\nSi vous considérez que cela n'est pas justifié, vous pouvez contacter le service administratif pour plus d'informations."
+            break;
         case MAILACTION.DELETE:
             object = "Votre compte a été supprimé."
             msg = "Voilà compte supprimé."
@@ -127,7 +133,6 @@ exports.sendHRMailTo = async (user, action, hr) =>{
         }
     });
 }
-
 
 exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
     let transporter = getTransporter()
@@ -224,4 +229,42 @@ exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
         default:
             break
     }
+}
+
+exports.sendOrderMail = async (order, status) => {
+    let transporter = getTransporter()
+
+    let msg = ""
+    if(status === "preparation"){
+        msg = "Votre commande a été enregistrée. Nous la préparons dans les plus brefs délais.\n\n"
+        msg+="Nous vous tiendrons informer de l'avancement de la commande."
+    }else if(status === "shipped"){
+        msg = "Votre commande a été envoyé. Vous la recevrez dans quelques jours.\n\n"
+        msg+="Nous vous tiendrons informer de la livraison de la commande."
+    }else if(status === "delivered"){
+        msg = "Votre commande a été livré. Merci de votre achat chez https://vetService.fr.\n\n"
+    }
+    msg+="Récapitulatif de commande : \n" +getOrderItem(order)
+    msg+="Total : "+order.price+"€\n"
+    msg+="Adresse d'expédition : "+order.street+", "+order.postalCode+" "+order.city
+    let object = "Votre commande "+order._id+" est en cours de préparation"
+
+    let mailOptions = getMailOptions(order.mail, object, msg)
+
+    await transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+}
+
+function getOrderItem(order) {
+    let msg = "Commande n°"+order._id+"\n\n"
+    for(let item of order.item){
+        msg+=item.quantity+"x "+item.name+"\n"
+    }
+    msg+="\n"
+    return msg
 }

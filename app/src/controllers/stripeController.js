@@ -1,5 +1,7 @@
-const {UserDoesntExistError, UserError} = require("../configs/customError")
-const {getSubscriptionsByUser, getProductList, buyProductList} = require("../services/stripeService")
+const {UserDoesntExistError, OrderDoesntExistError} = require("../configs/customError")
+const {getSubscriptionsByUser, getProductList, buyProductList, webhookTrigger,
+    getOrderByStatus, updateOrderStatus, getAllOrder} = require("../services/stripeService")
+
 
 exports.getMySuscription = async (req, res) =>{
     try{
@@ -32,7 +34,6 @@ exports.getUserSuscription = async (req, res) =>{
     }
 }
 
-
 exports.getProductList = async (req, res) =>{
     try{
         let result = await getProductList()
@@ -64,3 +65,56 @@ exports.buyProducts = async (req, res) =>{
         }
     }
 }
+
+exports.webHookCompleteOrder = async (req, res) =>{
+    try{
+        let result = await webhookTrigger(req.body)
+        return res.status(201).json(result)
+    }catch (err){
+        console.error(err.message);
+        return res.status(400).json(err.message);
+    }
+}
+
+exports.getOrderByStatus = async (req, res) =>{
+    try{
+        let result = await getOrderByStatus(req.query.status)
+        return res.status(200).json(result)
+    }catch (err){
+        if(err instanceof OrderDoesntExistError){
+            return res.status(404).json(err.message);
+        }else {
+            console.error(err.message);
+            return res.status(400).json(err.message);
+        }
+    }
+}
+
+exports.getOrders = async (req, res) =>{
+    try{
+        let result = await getAllOrder()
+        return res.status(200).json(result)
+    }catch (err){
+        if(err instanceof OrderDoesntExistError){
+            return res.status(404).json(err.message);
+        }else {
+            console.error(err.message);
+            return res.status(400).json(err.message);
+        }
+    }
+}
+
+exports.putOrder = async (req, res) =>{
+    try{
+        let result = await updateOrderStatus(req.body.status, req.params.id)
+        return res.status(200).json(result)
+    }catch (err){
+        if(err instanceof OrderDoesntExistError){
+            return res.status(404).json(err.message);
+        }else {
+            console.error(err.message);
+            return res.status(400).json(err.message);
+        }
+    }
+}
+

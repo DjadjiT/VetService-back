@@ -61,13 +61,13 @@ class NewsletterError extends Error {
         this.name = this.constructor.name;
     }
 }
+
 class NewsletterDoesntExistError extends Error {
     constructor() {
         super("Newsletter doesnt exist");
         this.name = this.constructor.name;
     }
 }
-
 
 class ValidationError extends Error {
     constructor(message) {
@@ -76,6 +76,19 @@ class ValidationError extends Error {
     }
 }
 
+class OrderError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = this.constructor.name;
+    }
+}
+
+class OrderDoesntExistError extends Error {
+    constructor() {
+        super("Order doesnt exist");
+        this.name = this.constructor.name;
+    }
+}
 
 module.exports = {
     UserNotAuthorizedError,
@@ -88,5 +101,7 @@ module.exports = {
     AppointmentError,
     NewsletterError,
     NewsletterDoesntExistError,
-    HRError
+    HRError,
+    OrderDoesntExistError,
+    OrderError
 };

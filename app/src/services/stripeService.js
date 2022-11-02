@@ -1,5 +1,8 @@
 const User = require("../models/user");
-const {UserDoesntExistError, UserError} = require("../configs/customError")
+const Order = require("../models/order");
+const {sendOrderMail} = require("./smtpService");
+const {ORDERSTATUS} = require("../models/enum/enum")
+const {UserDoesntExistError, OrderDoesntExistError, OrderError} = require("../configs/customError")
 const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
 
 exports.getSubscriptionsByUser = async (userId) =>{
@@ -45,21 +48,28 @@ exports.getProductList = async () =>{
             prod.default_price
         );
 
-        let unitAmount = price.unit_amount_decimal.slice(0, 2) + "." + price.unit_amount_decimal.slice(2);
-
-        prodList.push({
-            id: prod.id,
-            images: prod.images,
-            description: prod.description,
-            name: prod.name,
-            price: {
-                id: price.id,
-                currency: price.currency,
-                unit_amount: unitAmount,
-            }
-        })
+        prodList.push(prodToDto(prod, price))
     }
     return prodList
+}
+
+function prodToDto(prod, price){
+    let unitAmount = price.unit_amount_decimal.slice(0, price.unit_amount_decimal.length-2) + "." + price.unit_amount_decimal.slice(price.unit_amount_decimal.length-2);
+    return {
+        id: prod.id,
+        images: prod.images,
+        description: prod.description,
+        name: prod.name,
+        price: {
+            id: price.id,
+            currency: price.currency,
+            unit_amount: unitAmount,
+        }
+    }
+}
+
+exports.getProductDto = (prod, price) => {
+    return prodToDto(prod, price)
 }
 
 exports.buyProductList = async (productIdList) => {
@@ -115,9 +125,96 @@ exports.buyProductList = async (productIdList) => {
         ],
         payment_method_types: ['card'],
         line_items: items,
-        success_url: process.env.WEBSECURE+process.env.FRONT_URI,
+        success_url: process.env.WEBSECURE+process.env.FRONT_URI+"/#/success?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: process.env.WEBSECURE+process.env.FRONT_URI+'/#/fail',
     });
+}
+
+exports.webhookTrigger = async (event) =>{
+    switch (event.type) {
+        case 'checkout.session.completed':
+            const data = event.data.object
+
+            let total = data.amount_total.toString();
+            let price = total.slice(0, total.length-2) + "." + total.slice(total.length-2);
+
+            let order = new Order({
+                name: data.customer_details.name,
+                street: data.customer_details.address.line1,
+                postalCode: data.customer_details.address.postal_code,
+                city: data.customer_details.address.city,
+                status: "preparation",
+                mail: data.customer_details.email,
+                price: price,
+                csId: data.id,
+                requestDate: new Date(),
+                shippingMethod: getShipping(data.shipping_rate, data.shipping_options),
+                item: [],
+            })
+
+            let lineItems = await stripe.checkout.sessions.listLineItems(order.csId);
+
+            for(let item of lineItems.data){
+                order.item.push({
+                    name: item.description,
+                    quantity: item.quantity
+                })
+            }
+            let newOrder = await order.save()
+
+            sendOrderMail(newOrder, ORDERSTATUS.PREPARATION)
+            break;
+        // ... handle other event types
+        default:
+            console.log(`Unhandled event type : ${event.type}`);
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    return "";
+}
+
+exports.updateOrderStatus = async (status, orderId) => {
+    let order = await Order.findById(orderId)
+    if(!order) throw new OrderDoesntExistError()
+
+    if(!statusExist(status)) throw new OrderError("The status doesnt exist.")
+
+    return Order.findByIdAndUpdate(orderId, {
+        status: status
+    }).then((data)=> {
+        console.log(data)
+        sendOrderMail(data, status)
+    })
+}
+
+exports.getOrderByStatus = async (status) => {
+    if(!statusExist(status)) throw new OrderError("The status doesnt exist.")
+
+    return Order.find({
+        status: status
+    })
+}
+
+exports.getAllOrder = async () => {
+    return Order.find()
+}
+
+function getShipping(shippingRate, shippingOptions){
+    for(let option of shippingOptions){
+        if(option.shipping_rate === shippingRate){
+            return option.shipping_amount===0?"standard":"fast"
+        }
+    }
+    return ""
+}
+
+function statusExist(status) {
+    for(let val of Object.values(ORDERSTATUS)){
+        if(status.toLowerCase() === val.toLowerCase()){
+            return true
+        }
+    }
+    return false;
 }
 
 function getAllLineItems(prodList){
@@ -139,3 +236,4 @@ function getAllLineItems(prodList){
     }
     return items
 }
+

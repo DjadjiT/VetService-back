@@ -70,6 +70,7 @@ const MAILACTION = {
     REGISTERADMIN: "registeradmin",
     VALIDATION: "validation",
     DEACTIVATION: "deactivation",
+    REFUSE: "refuse",
     DELETE: "delete",
     UPDATE: "update",
     APPOINTMENTUPDATE: "appointmentupdate",
@@ -80,6 +81,12 @@ const MAILACTION = {
     HRDELETION: "hrdeletion"
 }
 
+const ORDERSTATUS = {
+    PREPARATION: "preparation",
+    SHIPPED: "shipped",
+    DELIVERED: "delivered",
+}
+
 module.exports = {
     ROLE: ROLE,
     SPECIALITY: SPECIALITY,
@@ -87,4 +94,5 @@ module.exports = {
     ANIMALTYPE: ANIMALTYPE,
     SEX: SEX,
     MAILACTION: MAILACTION,
+    ORDERSTATUS: ORDERSTATUS
 }
