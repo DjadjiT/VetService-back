@@ -228,7 +228,7 @@ exports.appToDto = async (app, userId) => {
 async function getDisponibilityForVet(vet, date){
     let userDto = userToDto(vet)
     let dispoList = []
-    let offset = 60*-1*Number(process.env.OFFSET)
+    let offset = 60*Number(process.env.OFFSET)
     console.log(offset)
     date = new Date(date.getTime()+offset*60*1000)
     console.log(date)
