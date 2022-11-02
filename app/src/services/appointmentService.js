@@ -230,6 +230,7 @@ async function getDisponibilityForVet(vet, date){
     let dispoList = []
     let offset = date.getTimezoneOffset()*-1
     date = new Date(date.getTime()+offset*60*1000)
+    console.log(date)
 
     try{
         if(vet.schedule.workingDay[(date.getDay()-1)%7]){
