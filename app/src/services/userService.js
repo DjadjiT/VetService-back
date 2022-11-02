@@ -131,8 +131,8 @@ exports.createSession = async (userId) =>{
                 quantity: 1,
             },
         ],
-        success_url: process.env.WEBSECURE+process.env.FRONT_URI+'/sucess',
-        cancel_url: process.env.WEBSECURE+process.env.FRONT_URI+'/fail',
+        success_url: process.env.WEBSECURE+process.env.FRONT_URI+'#/sucess',
+        cancel_url: process.env.WEBSECURE+process.env.FRONT_URI+'#/fail',
         customer: user.customerId,
         subscription_data:{
             metadata : {
