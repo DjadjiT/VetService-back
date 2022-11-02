@@ -142,7 +142,7 @@ exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
     let date = new Date(appointment.date)
     let receiver = ""
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: "numeric", minute: "numeric"};
-    let strDate = date.toLocaleDateString(undefined, options)
+    let strDate = date.toLocaleDateString('fr-FR"', options)
     strDate = strDate[0].toUpperCase() + strDate.slice(1)
     let mailOptions
 
@@ -150,8 +150,8 @@ exports.sendAppointmentMailTo = async (action, appointment, client, vet) =>{
         case MAILACTION.APPOINTMENT:
             object = "Vous avez un nouveau rendez vous le : "+strDate
             receiver = [client.email, vet.email]
-            msg = "Vous avez un rendez-vous le "+strDate+" avec le Dr."+vet.lastName+" "+vet.firstName+"." +
-                "\nVous trouverez  votre practicien, à : "+vet.institutionName+", situé au : "+vet.street+" "+vet.postalCode+", "+vet.city+"."
+            msg = "Vous avez un rendez-vous le "+strDate+" avec le Dr."+vet.lastName+" "+vet.firstName+".\n\n" +
+                "Adresse du praticien : "+vet.institutionName+", au "+vet.street+" "+vet.postalCode+", "+vet.city+"."
 
             mailOptions = getMailOptions(client.email, object, msg)
 
