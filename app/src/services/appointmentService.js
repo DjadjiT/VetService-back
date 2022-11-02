@@ -114,6 +114,7 @@ exports.adminGetAppointmentByUserId = async(userId) => {
     return res
 
 }
+
 exports.deleteAppointmentById = async (appId, userId) => {
 
     let app = await validateRightOnAppointment(appId, userId)
@@ -128,7 +129,6 @@ exports.deleteAppointmentById = async (appId, userId) => {
 
     return del
 }
-
 
 exports.deleteAppointmentByHRId = async (hrId) => {
 
