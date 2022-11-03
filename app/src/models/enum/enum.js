@@ -7,10 +7,9 @@ const ROLE = {
 const SPECIALITY = {
     medecineComportementAnimauxDomestique: "Médecine du comportement des animaux domestiques",
     medecineInterneAnimaauxCompagnie: "Médecine interne des animaux de compagnie",
-    medecineInterneAnimaauxCompagnieCardiologie: "Médecine interne des animaux de compagnie, option cardiologie",
     anatomiePathologiqueVeterinaire: "Anatomie pathologique vétérinaire",
     chirurgieAnimauxDomestique: "Chirurgie des animaux de compagnie",
-    chirgurieEquine: "Chirurgie équine",
+    chirgurieAnimauxElevage: "Chirurgie des animaux d'élevage",
     demartologieVeterinaire: "Dermatologie vétérinaire",
     elevagePathologieEquide: "Elevage et pathologie des équidés",
     gestionSanteBovins: "Gestion de la santé des bovins",
@@ -22,11 +21,7 @@ const SPECIALITY = {
     neurologieVeterinaire: "Neurologie vétérinaire",
     nutritionCliniqueVeterinaire: "Nutrition clinique vétérinaire",
     ophtalmologieVeterinaire: "Ophtalmologie vétérinaire",
-    pathologieCliniqueVeterinaire: "Pathologie clinique vétérinaire",
     santeProductionAnimalRegionChaude: "Santé et productions animales en régions chaudes",
-    santePubliqueVeterinaireScienceAliments: "Santé publique vétérinaire - sciences des aliments",
-    santePubliqueVeterinaireMedecinePopulations: "Santé publique vétérinaire - médecine des populations",
-    scienceMedecineAnimauxLaboratoire: "Sciences et médecine des animaux de laboratoire",
     stomatologieDentisterieVeterinaire: "Stomatologie et dentisterie vétérinaires"
 };
 
