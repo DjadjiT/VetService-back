@@ -311,8 +311,16 @@ function isBetweenWorkingHour(vet, date){
     let pauseFinish = new Date(date.getFullYear(), date.getMonth(), date.getDate(), pauseFinishSplit[0], pauseFinishSplit[1])
     let finishingHour = new Date(date.getFullYear(), date.getMonth(), date.getDate(), finishingHourSplit[0], finishingHourSplit[1])
 
-    return (moment(pauseStart).isAfter(date) && moment(startingHour).isBefore(date)) ||
-        (moment(finishingHour).isAfter(date) && moment(pauseFinish).isBefore(date))
+    console.log(startingHour)
+    console.log(pauseStart)
+    console.log(pauseFinish)
+    console.log(finishingHour)
+    console.log("------------------")
+    console.log(date)
+    console.log("------------------")
+
+    return (moment(pauseStart).isSameOrAfter(date) && moment(startingHour).isSameOrBefore(date)) ||
+        (moment(finishingHour).isSameOrAfter(date) && moment(pauseFinish).isSameOrBefore(date))
 }
 
 function getDisponibilityList(possibleAppointment, appointments){
