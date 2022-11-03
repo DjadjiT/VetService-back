@@ -265,6 +265,8 @@ async function getDisponibilityForVet(vet, date){
 
             dispoList = getDisponibilityList(morningPossibleAppointment, morningAppDateList).concat(
                 getDisponibilityList(afternoonPossibleAppointment, afterNoonAppDateList))
+
+            dispoList = dispoList.filter(elem => checkDateIsBeforeToday(elem))
         }
     }catch (err){
         return {
@@ -277,6 +279,9 @@ async function getDisponibilityForVet(vet, date){
         vet: userDto
     }
 
+}
+function checkDateIsBeforeToday(date) {
+    return moment(date).isAfter(new Date());
 }
 
 async function isAppointmentAvailable(vet, date){

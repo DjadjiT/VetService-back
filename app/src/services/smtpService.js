@@ -56,11 +56,12 @@ exports.sendMailTo = async (user, action) =>{
     switch (action){
         case MAILACTION.REGISTER:
             object = "Bienvenue à VetServices."
-            msg = "Bonjour & bienvenue sur vetservice ici vous pouvez faire plein de truc.\n Comme acheter des produits et prendre des rendez-vous"
+            msg = "Bonjour, et bienvenue, "+user.lastName+" "+user.firstName+" sur vetservice ici vous pouvez faire plein de truc.\n Comme acheter des produits et prendre des rendez-vous" +
+                "Lors de votre première connexion, je vous conseil de créer un carnet de santé pour vos animaux."
             break;
         case MAILACTION.REGISTERVET:
             object = "Bienvenue à VetServices."
-            msg = "Bonjour & bienvenue sur vetservice ici vous pouvez faire plein de truc.\n Comme acheter des produits et faire des rendez-vous.\n\n" +
+            msg = "Bonjour, et bienvenue, "+user.lastName+" "+user.firstName+ " sur vetservice ici vous pouvez faire plein de truc.\n Comme acheter des produits et faire des rendez-vous.\n\n" +
                 "Pour le moment votre compte n'est pas actif.\nNous vous tiendrons informer de la validation de votre compte de la part d'un admin."
             break;
         case MAILACTION.REGISTERADMIN:
