@@ -38,6 +38,7 @@ exports.getSubscriptionsByUser = async (userId) =>{
 exports.getProductList = async () =>{
     let query = {
         query: "active: \'true\' AND metadata[\'boutique\']: \'ligne\'",
+        limit: 100
     }
     let products = await stripe.products.search(query);
 
